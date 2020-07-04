@@ -2,10 +2,10 @@ var mysql = require('mysql');
 
 // Connessione al database
 var connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'DCBdatabase',
+    host: 'sql7.freesqldatabase.com',
+    user: 'sql7352666',
+    password: 'CfZTxUSiQV',
+    database: 'sql7352666',
     multipleStatements: true
 });
 
