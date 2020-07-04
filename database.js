@@ -2,10 +2,10 @@ var mysql = require('mysql');
 
 // Connessione al database
 var connection = mysql.createConnection({
-    host: 'sql7.freesqldatabase.com',
-    user: 'sql7352666',
-    password: 'CfZTxUSiQV',
-    database: 'sql7352666',
+    host: 'eu-cdbr-west-03.cleardb.net',
+    user: 'b0c92aa60a7912',
+    password: '260ca346',
+    database: 'heroku_f0b98ed61c4bc6f',
     multipleStatements: true
 });
 
