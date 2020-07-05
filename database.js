@@ -2,10 +2,10 @@ var mysql = require('mysql');
 
 // Connessione al database
 var connection = mysql.createConnection({
-    host: 'eu-cdbr-west-03.cleardb.net',
-    user: 'b0c92aa60a7912',
-    password: '260ca346',
-    database: 'heroku_f0b98ed61c4bc6f',
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'DCBdatabase',
     multipleStatements: true
 });
 
