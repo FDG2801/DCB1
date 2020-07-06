@@ -96,20 +96,29 @@ exports.avvisoRendicontoTrimestrale = function() {
 }
 
 // --- Effettua Rendiconto:
-const generaDocumentoRendiconto = function(idUtente, idComune, importo, callback) {
-    immobiliDAO.trovaComuneProvincia(idComune, function(datiComune, msg) {
+const generaDocumentoRendiconto = function(idUtente, idImmobile, importo, callback) {
+    immobiliDAO.trovaComuneProvinciaPerImmobile(idImmobile, function(datiComune, msg) {
         autenticazioneDAO.richiestaUtente(idUtente, function(datiUtente, msg) {
-            contabilitaDAO.cercaDatiRendiconto(idUtente, idComune, function(datiRendiconto, msg) {
+            contabilitaDAO.cercaDatiRendiconto(idImmobile, function(datiRendiconto, msg) {
                 if (msg === "OK") {
-                    console.log("DATI RENDICONTO: ", datiRendiconto);
-                    pdfCreator.generaDocumentoRendiconto(datiRendiconto[1], datiUtente[0], 
-                        datiComune[0].nomeComune, idComune, importo,
-                        function(msg, nomeFile) {
+                    immobiliDAO.richiestaImmobile(idImmobile, function(datiImmobile, msg) {
                         if (msg === "OK") {
-                            callback(nomeFile, "OK");
+                            pdfCreator.generaDocumentoRendiconto(datiRendiconto[1], datiUtente[0], 
+                                datiComune[0].nomeComune, datiImmobile, importo,
+                                function(msg, nomeFile) {
+                                if (msg === "OK") {
+                                    callback(nomeFile, "OK");
+                                }
+                                else {
+                                    callback("", "Errore nella generazione del documento:\n" + msg);
+                                }
+                            });
+                        }
+                        else if (msg === "NO_RESULT") {
+                            callback("", "Errore: l'immobile specificato non è esistente.");
                         }
                         else {
-                            callback("", "Errore nella generazione del documento:\n" + msg);
+                            callback("", "Errore nella ricerca dei dati dell'immobile: " + msg);
                         }
                     });
                 }
@@ -127,29 +136,39 @@ const generaDocumentoRendiconto = function(idUtente, idComune, importo, callback
 exports.effettuaPagamentoRendiconto = function(req, res) {
     sess = JSON.parse(req.query.sessionData);
 
-    if (req.query.idComune) {
+    if (req.query.idImmobile) {
         autenticazioneDAO.richiestaUtente(sess.idUtente, function(datiUtente, msg) {
             if (msg === "OK") {
-                generaDocumentoRendiconto(sess.idUtente, req.query.idComune, req.query.importo, function(nomeFile, msg) {
+                generaDocumentoRendiconto(sess.idUtente, req.query.idImmobile, req.query.importo, function(nomeFile, msg) {
                     if (msg === "OK") {
-                        contabilitaDAO.pagamentoRendiconto(sess.idUtente, req.query.idComune, req.query.importo, nomeFile, function(result, msg) {
+                        contabilitaDAO.pagamentoRendiconto(sess.idUtente, req.query.idImmobile, req.query.importo, nomeFile, function(result, msg) {
                             if (msg === "OK") {
-                                mailer.inviaMail(datiUtente[0].email, "Versamento tasse di soggiorno",
-                                    "Ti confermiamo l'avvenuto pagamento delle tasse di soggiorno " +
-                                    "con importo pari a €" + req.query.importo + ".", function(error, message) {
+                                mailer.inviaMailRendiconto_Host(datiUtente[0].email, nomeFile, req.query.importo, function(error, message) {
                                         console.log(message);
                                     }); 
-                                immobiliDAO.trovaComuneProvincia(req.query.idComune, function(datiComune, msg) {
+                                immobiliDAO.trovaComuneProvinciaPerImmobile(req.query.idImmobile, function(datiComune, msg) {
                                     if (msg === "OK") {
-                                        mailer.inviaMailRendiconto(nomeFile, datiUtente[0], datiComune[0], function(error, message) {
-                                            console.log(message);
+                                        immobiliDAO.richiestaImmobile(req.query.idImmobile, function(datiImmobile, msg) {
+                                            if (msg === "OK"){
+                                                mailer.inviaMailRendiconto(nomeFile, datiUtente[0], datiComune[0], datiImmobile[0], function(error, message) {
+                                                    console.log(message);
+                                                });
+                                            }
+                                            else if (msg === "NO_RESULT") {
+                                                console.log("Errore: impossibile trovare l'immobile");
+                                            }
+                                            else {
+                                                console.log("Errore: " + msg);
+                                            }
                                         });
+                                    }
+                                    else if (msg === "NO_RESULT") {
+                                        console.log("Errore: impossibile trovare il comune");
                                     }
                                     else {
                                         console.log("Errore: " +  msg);
                                     }
                                 });
-                                
                                 res.send({success: true, message: "Rendiconto effettuato con successo."});
                             }
                             else {
@@ -168,15 +187,15 @@ exports.effettuaPagamentoRendiconto = function(req, res) {
         });
     }
     else {
-        res.send({success: false, message: "Errore: non è stato specificato un comune."});
+        res.send({success: false, message: "Errore: non è stato specificato un immobile."});
     }
 }
 
 exports.richiediTotaleTasseRendiconto = function(req, res) {
     sess = JSON.parse(req.query.sessionData); 
 
-    if (req.query.idComune) {
-        contabilitaDAO.richiediTotaleTasseRendiconto(sess.idUtente, req.query.idComune, function(result, msg) {
+    if (req.query.idImmobile) {
+        contabilitaDAO.richiediTotaleTasseRendiconto(req.query.idImmobile, function(result, msg) {
             if (msg === "OK") {
                 console.log("Risultato tasse: ", result);
                 res.send({success: true, totaleTasse: result[1][0].TotaleTasse, message: "Totale tasse calcolato."});
@@ -190,22 +209,22 @@ exports.richiediTotaleTasseRendiconto = function(req, res) {
         });
     }
     else {
-        res.send({success: false, message: "Errore: non è stato specificato un comune."});
+        res.send({success: false, message: "Errore: non è stato specificato un immobile."});
     }
 }
 
-exports.comuniDaRendicontare = function(req, res) {
+exports.immobiliDaRendicontare = function(req, res) {
     sess = JSON.parse(req.query.sessionData);
 
-    contabilitaDAO.richiediComuniDaRendicontare(sess.idUtente, function(listaComuni, msg) {
+    contabilitaDAO.richiediImmobiliDaRendicontare(sess.idUtente, function(listaImmobili, msg) {
         if (msg === "OK") {
-            res.send({success: true, listaComuni: JSON.stringify(listaComuni), message: "Trovati comuni!"});
+            res.send({success: true, listaImmobili: JSON.stringify(listaImmobili), message: "Trovati immobili!"});
         }       
         else if (msg === "NO_RESULT") {
-            res.send({success: true, listaComuni: JSON.stringify([]), message: "Nessun comune a cui fare rendiconto."});
+            res.send({success: true, listaImmobili: JSON.stringify([]), message: "Nessun immobile per cui fare rendiconto."});
         }
         else {
-            res.send({success: false, message: "Errore nella richiesta di comuni per cui eseguire un rendiconto: " + msg});
+            res.send({success: false, message: "Errore nella richiesta di immobili per cui eseguire un rendiconto: " + msg});
         }
     });
 }

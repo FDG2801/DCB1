@@ -23,6 +23,18 @@ exports.trovaComuneProvincia = function(idComune, callback) {
     db.queryRichiesta(sql, [idComune], callback);
 }
 
+exports.trovaComuneProvinciaPerImmobile = function(idImmobile, callback) {
+    const sql = `
+        SELECT C.nome AS nomeComune, P.nome AS nomeProvincia 
+        FROM Immobile I, Comuni C, Province P 
+        WHERE I.ID_Immobile = ?
+            AND I.ref_comune = C.id_comune 
+            AND C.ref_provincia = P.id_provincia
+        `;
+
+    db.queryRichiesta(sql, [idImmobile], callback);
+}
+
 exports.trovaIDComune = function(nomeComune, callback) {
     const sql = 'SELECT id_comune FROM Comuni WHERE nome = ?';
 
@@ -53,7 +65,7 @@ exports.inserisciCasa = function(refHost, titolo, descrizione, regole, servizi,
             modPag, percRimb, tasse, esenti, urlFoto, info, 
             indirizzo, cap, idComune, false, true],
         [prezzoNotte, numBagni, postiLetto],
-        [refHost, idComune]
+        [refHost]
     ];
 
     const sql = `
@@ -70,7 +82,7 @@ exports.inserisciCasa = function(refHost, titolo, descrizione, regole, servizi,
         INSERT INTO Casa VALUES (
             @maxID, ?);
 
-        CALL aggiungiTuplaFintissima(?);
+        CALL aggiungiTuplaFintissima(?, @maxID);
     `;
     db.queryInserimento(sql, valuesInserisciCasa, callback);
 }
@@ -89,7 +101,7 @@ exports.inserisciBnB = function( refHost, titolo, descrizione, regole, servizi,
         [ numeroSingole, numeroDoppie, numeroTriple, numeroQuadruple, 
             numeroExtra, prezzoSingole, prezzoDoppie, prezzoTriple, prezzoQuadruple, 
             prezzoExtra, personeCameraExtra ],
-        [ refHost, idComune ]
+        [ refHost ]
     ];
     
     const sql = `
@@ -106,7 +118,7 @@ exports.inserisciBnB = function( refHost, titolo, descrizione, regole, servizi,
         INSERT INTO CamereBnB VALUES (
             @maxID, ?);
 
-        CALL aggiungiTuplaFintissima(?);
+        CALL aggiungiTuplaFintissima(?, @maxID);
     `;
 
     db.queryInserimento(sql, valuesInserisciBnB, callback);
@@ -202,14 +214,7 @@ exports.rimuoviOscuramentoImmobile = function(idImmobile, callback){
 
 exports.richiestaImmobile = function(idImmobile, callback) {
     const sql = "SELECT * FROM Immobile WHERE ID_Immobile = ?";
-    db.queryRichiesta(sql, [idImmobile], function(result, msg) {
-        if (msg == 'OK') {
-            callback(result, msg);
-        }
-        else {
-            callback(undefined, msg);
-        }
-    });
+    db.queryRichiesta(sql, [idImmobile], callback);
 }
 
 exports.richiestaDatiBnB = function(idImmobile, callback) {

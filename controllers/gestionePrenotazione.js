@@ -5,16 +5,20 @@ const autenticazioneDAO = require('../dao/autenticazioneDAO');
 const prenotazioneDAO = require('../dao/prenotazioniDAO');
 const immobiliDAO = require('../dao/immobiliDAO');
 const mailer = require('../nodeMailer');
+const moment = require('moment');
 
 const calcolaDifferenzaTraDate = function(date1, date2) {
-    const diffTime = Math.abs(date2 - date1);
-    const diffDays = max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    const d1 = moment(date1).valueOf();
+    const d2 = moment(date2).valueOf();
+    const diffTime = Math.abs(d2 - d1);
+    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    return diffDays;
 }
 
 // --- Prenotazione Casa
 exports.prenotazioneCasa = function(req, res) {
     if (req.files) {
-        fileHandler.controllaEstensioneFileMultipli(req.files, [".png", ".jpg", ".pdf"], function(validi) {
+        fileHandler.controllaEstensioneFileMultipli(req.files, [".png", ".jpg", ".jpeg", ".pdf"], function(validi) {
             if (validi) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msg) {
                     if (msg === "OK") {
@@ -29,7 +33,7 @@ exports.prenotazioneCasa = function(req, res) {
                                                     console.log(msg);
                                                 });
                                             });
-                                            res.send({success: false, message: "La somma dei giorni per cui hai prenotato questa casa supera 28;"});
+                                            res.send({success: false, message: "La somma dei giorni per cui hai prenotato questa casa supera 28."});
                                         }
                                         else {
                                             var ospiti = JSON.parse(req.body.listaOspiti);
@@ -191,7 +195,7 @@ exports.prenotazioneCasa = function(req, res) {
 exports.prenotazioneBnB = function(req, res) {
     if (req.files) {
         var listaDocumenti = req.files;
-        fileHandler.controllaEstensioneFileMultipli(listaDocumenti, [".png", ".jpg", ".pdf"], function(validi) {
+        fileHandler.controllaEstensioneFileMultipli(listaDocumenti, [".png", ".jpeg", ".jpg", ".pdf"], function(validi) {
             if (validi) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msg) {
                     if (msg === "OK") {
@@ -240,15 +244,10 @@ exports.prenotazioneBnB = function(req, res) {
                                                         if (msg === "OK") {
                                                             // --- Serie di funzioni finalizzate all'invio delle mail --- //
                                                             autenticazioneDAO.richiestaUtente(sess.idUtente, function(userResult, msg) {
-                                                                console.log("BBBBB: ",msg, userResult);
                                                                 if (msg === "OK") {
                                                                     prenotazioneDAO.richiediHostImmobile(req.body.idImmobile, function(hostResult, msg) {
-                                                                        console.log("AAAAA: ", msg, hostResult);
                                                                         if (msg === "OK") {                                                
                                                                             immobiliDAO.richiestaImmobile(req.body.idImmobile, function(immobileResult, msg) {
-                                                                                console.log(msg);
-                                                                                console.log(userResult[0].email);
-                                                                                console.log(msg, immobileResult);
                                                                                 if (msg === "OK") {
                                                                                     // Invia mail di riepilogo all'utente
                                                                                     mailer.inviaMail(userResult[0].email, "Richiesta di prenotazione effettuata",
@@ -366,8 +365,9 @@ exports.annullaPrenotazione = function(req, res) {
                 if (msg === "OK" || msg === "NO_RESULT") {
                     let check = ((msg === "OK" 
                         && ((pagamenti[0].modalitaPagamento == "dilazionato" && pagamenti[0].NumeroPagamenti < 2)
-                            || ((pagamenti[0].modalitaPagamento == "metà in loco" || pagamenti[0].modalitaPagamento == "online") 
-                                && pagamenti[0].NumeroPagamenti < 1))) 
+                            || 
+                            (pagamenti[0].modalitaPagamento != "dilazionato" && pagamenti[0].NumeroPagamenti < 1))) 
+
                         || msg === "NO_RESULT");
                     
                     if (check) {
@@ -480,37 +480,31 @@ const invioDatiQuestura = function(idPrenotazione) {
                                                         return true;
                                                     }
                                                     else {
-                                                        console.log("Errore5: " + message);
                                                         return false;
                                                     }
                                                 });
                                         }
                                         else {
-                                            console.log("Errore4: " + msg);
                                             return false;
                                         }
                                     });
                                 }
                                 else {
-                                    console.log("Errore4: " + msg);
                                     return false;
                                 }
                             });
                         }
                         else {
-                            console.log("Errore3: " + msg);
                             return false;
                         }
                     });
                 }   
                 else {
-                    console.log("Errore2: " + msg);
                     return false;
                 }
             });
         }
         else {
-            console.log("Errore1: " + msg);
             return false;
         }
     });

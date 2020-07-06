@@ -7,7 +7,6 @@ exports.inserisciUtente = function(email, passwordUtente, nome, cognome, dataNas
             callback(undefined, "Errore: utente già registrato");
         }
         else {
-            console.log(email, passwordUtente, nome, cognome, dataNascita);
             const sql = "INSERT INTO Utente (email, passwordUtente, nome, cognome, dataNascita, foto) VALUES (?);";
             db.queryInserimento(sql, [[email, passwordUtente, nome, cognome, dataNascita, 'defaultAvatar.jpg']], callback);
         }
@@ -29,12 +28,10 @@ exports.richiediInfoAutenticazione = function(email, callback) {
 
 exports.controllaHost = function(idUtente, callback) {
     const sql = "SELECT restrizioni FROM Host WHERE ref_Utente = ?";
-    console.log(idUtente);
     db.queryRichiesta(sql, [idUtente], callback);
 }
 
 exports.aggiornaPassword = function(email, nuovaPassword, callback) {
-    console.log(email, nuovaPassword);
     const sql = "UPDATE Utente SET passwordUtente = ? WHERE email = ?";
     db.queryAggiornamento(sql, [nuovaPassword, email], callback);
 }

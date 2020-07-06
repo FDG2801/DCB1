@@ -93,7 +93,7 @@ exports.modificaProfilo = function(req, res) {
     }
 
     if (fileEsistente) {
-        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg"], function(isValid) {
+        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".jpeg"], function(isValid) {
             if (isValid) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msgLogin) {
                     if (msgLogin === "OK") {
@@ -221,7 +221,7 @@ exports.modificaProfilo = function(req, res) {
 // --- Diventa Host
 exports.diventaHost = function(req, res) {
     if (req.file) {
-        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".pdf"], function(isValid) {
+        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".jpeg", ".pdf"], function(isValid) {
             if (isValid) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msgLogin) {
                     if (msgLogin === "OK") {
@@ -246,7 +246,6 @@ exports.diventaHost = function(req, res) {
                                     funzionalitaDAO.richiediRichiestaHost(sess.idUtente, function(qResult, msg) {
                                         if (msg === "OK") {
                                             prevDoc = qResult[0].scansioneDocumento;
-                                            console.log(prevDoc);
                                         }
                                     });
                                     funzionalitaDAO.diventaHost(sess.idUtente, cf, req.file.filename, tipo, function(insResult, msg) {

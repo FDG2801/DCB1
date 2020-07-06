@@ -36,7 +36,7 @@ exports.richiediImmobiliHost = function(req, res) {
 // --- Inserimento casa:
 exports.inserisciCasa = function(req, res) {
      if (req.file) {
-        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg"], function(isValid) {
+        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".jpeg"], function(isValid) {
             if (isValid) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msg) {
                     if (msg === "OK") {
@@ -120,7 +120,7 @@ exports.inserisciCasa = function(req, res) {
 // --- Inserimento bnb:
 exports.inserisciBnB = function(req, res) {
     if (req.file) {
-        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg"], function(isValid) {
+        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".jpeg"], function(isValid) {
             if (isValid) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msg) {
                     sess = JSON.parse(req.body.sessionData);
@@ -207,7 +207,7 @@ exports.inserisciBnB = function(req, res) {
 // --- Modifica casa:
 exports.modificaCasa = function(req, res) {
     if (req.file) {
-        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg"], function(isValid) {
+        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".jpeg"], function(isValid) {
             if (isValid) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msg) {
                     if (msg === "OK") {
@@ -311,7 +311,7 @@ exports.modificaCasa = function(req, res) {
 // --- Modifica BnB
 exports.modificaBnB = function(req, res) {
     if (req.file) {
-        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg"], function(isValid) {
+        fileHandler.controllaEstensioneFile(req.file.originalname, [".png", ".jpg", ".jpeg"], function(isValid) {
             if (isValid) {
                 autenticazioneControl.checkIfLoggedIn_body(req, function(msg) {
                     if (msg === "OK") {
@@ -452,8 +452,6 @@ exports.rimuoviOscuramentoImmobile = function(req, res) {
 // --- Cancella immobile
 exports.cancellaImmobile = function(req, res) {
     sess = JSON.parse(req.query.sessionData);
-
-    console.log(req.query.idImmobile);
 
     immobiliDAO.richiestaImmobile(req.query.idImmobile, function(datiImmobile, msg) {
         if (msg === "OK") {

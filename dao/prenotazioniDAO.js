@@ -52,14 +52,14 @@ exports.aggiungiPrenotazione = function( idImmobile, idUtente, dataIn, dataOut,
     //Ogni ciclo di for inserisce un ospite nella tabella degli ospiti relativa alla prenotazione appena caricata
     //Devp prendere l'ID dell'ultima prenotazione aggiunta
     listaOspiti.forEach( function(item) {
-        let itemValues = [item.nome, item.cognome, item.email, item.dataNascita];
+        let itemValues = [item.nome, item.cognome, item.dataNascita];
         for (let i = 0; i < listaFile.length; i++) {
             if (listaFile[i].originalname === item.documento) {
                 itemValues.push(listaFile[i].filename);
                 break;
             }
         }
-        sql = sql + `INSERT INTO Ospiti (ref_Prenotazione, nome, cognome, email, dataNascita, documento) VALUES (@ultimaPrenotazione, ?);`;
+        sql = sql + `INSERT INTO Ospiti (ref_Prenotazione, nome, cognome, dataNascita, documento) VALUES (@ultimaPrenotazione, ?);`;
         values.push(itemValues);
     });
 
@@ -92,15 +92,14 @@ exports.aggiungiPrenotazione_BnB = function(idImmobile, idUtente, dataIn, dataOu
     //Ogni ciclo di for inserisce un ospite nella tabella degli ospiti relativa alla prenotazione appena caricata
     //Devp prendere l'ID dell'ultima prenotazione aggiunta
     listaOspiti.forEach( function(item) {
-        let itemValues = [item.nome, item.cognome, item.email, item.dataNascita];
+        let itemValues = [item.nome, item.cognome, item.dataNascita];
         for (let i = 0; i < listaFile.length; i++) {
-            console.log(listaFile[i].originalname);
             if (listaFile[i].originalname === item.documento) {
                 itemValues.push(listaFile[i].filename);
                 break;
             }
         }
-        sql = sql + `INSERT INTO Ospiti (ref_Prenotazione, nome, cognome, email, dataNascita, documento) VALUES (@ultimaPrenotazione, ?);`;
+        sql = sql + `INSERT INTO Ospiti (ref_Prenotazione, nome, cognome, dataNascita, documento) VALUES (@ultimaPrenotazione, ?);`;
         values.push(itemValues);
     });
 
@@ -108,7 +107,6 @@ exports.aggiungiPrenotazione_BnB = function(idImmobile, idUtente, dataIn, dataOu
 
     for (let i = 0; i < listaCamerePrenotate.length; i++) {
         lista.push(listaCamerePrenotate[i]);
-        console.log(i);
     }
 
     sql = sql + `

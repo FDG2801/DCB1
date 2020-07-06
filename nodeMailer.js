@@ -32,8 +32,6 @@ exports.inviaMail = function (emailDestinatario, soggetto, testo, callback) {
 
     transporter.sendMail(mailOptions, function(error, info, callback){
         if (error) {
-            console.log('errore grrrravissimo: ' + error);
-            console.log('problema! ' + info.response);
             errore = true;
         } else {
             console.log('Email sent: ' + info.response);
@@ -183,6 +181,8 @@ exports.inviaAvvisoRendiconto = function(listaMail, callback) {
         var mailDest = arrayItem.email;
         var comune = arrayItem.comune;
         var provincia = arrayItem.provincia;
+        var titolo = arrayItem.titolo;
+        var indirizzo = arrayItem.indirizzo;
 
         var mailOptions_Avviso = {
             from: 'dcbooking2020@gmail.com',
@@ -191,7 +191,8 @@ exports.inviaAvvisoRendiconto = function(listaMail, callback) {
             text: 
             'Ciao! Grazie per aver scelto DCBooking.\n\n' 
             + 'Ti comunichiamo che sono passati tre mesi dal tuo ultimo rendiconto effettuato ' 
-            + "per il comune di " + comune + ' (provincia di ' + provincia + ").\n"
+            + "per l'immobile '" + titolo + "', situato nel comune di " + comune + ' (provincia di ' + provincia + ") "
+            + "all'indirizzo " + indirizzo + ".\n"
             + 'Abbiamo applicato delle restrizioni al tuo account e oscurato tutti i tuoi immobili '
             + 'in attesa che il rendiconto venga effettuato. Le restrizioni verranno rimosse una '
             + "volta eseguito." 
@@ -216,12 +217,11 @@ exports.inviaAvvisoRendiconto = function(listaMail, callback) {
     }
 }
 
-// Dati immobile nome comune, indirizzo e provincia
 exports.inviaMailQuestura = function (listaOspiti, datiHost, datiImmobile, dataCheckIn, dataCheckOut, idPrenotazione, nomeComune, nomeProvincia, callback) {
     var elenco_ospiti = ""; 
 
     listaOspiti.forEach(function (arrayItem) {
-        elenco_ospiti += "NOME E COGNOME: " + arrayItem.nome + " " + arrayItem.cognome + "; EMAIL: " + arrayItem.email + "; NATO IL: " + arrayItem.dataNascita + "\n";
+        elenco_ospiti += "NOME E COGNOME: " + arrayItem.nome + " " + arrayItem.cognome + "; NATO IL: " + arrayItem.dataNascita + "\n";
     });
 
     var mail_questura = {
@@ -337,17 +337,17 @@ exports.inviaAvvisoAnnullamentoPrenotazione = function(datiMail, callback) {
     }
 }
 
-exports.inviaMailRendiconto = function (nomeFileRendiconto, datiUtente, datiComune, callback) {
+exports.inviaMailRendiconto = function (nomeFileRendiconto, datiUtente, datiComune, datiImmobile, callback) {
     
     var mailOptions = {
         from: "dcbooking2020@gmail.com",
-        //Mail di testing (Ovviamente non possiamo inviare alla questura)
+        //Mail di testing (Ovviamente non possiamo inviare all'ufficio del turismo)
         to: "antonino.monti02@community.unipa.it",
         subject: "Rendiconto - comune di " + datiComune.nomeComune + "(" + datiComune.nomeProvincia + ")",
         text: "In allegato il documento del rendiconto effettuato da " 
             + datiUtente.nome + " " + datiUtente.cognome
-            + " per il comune di " + datiComune.nomeComune 
-            + " (provincia di " + datiComune.nomeProvincia + ").\n",
+            + " per l'immobile '" + datiImmobile.titolo + "', situato nel comune di " + datiComune.nomeComune 
+            + " (provincia di " + datiComune.nomeProvincia + ") all'indirizzo " + datiImmobile.indirizzo + "\n",
         attachments: [
             {
                 path: './public/uploads/rendiconti/' + nomeFileRendiconto
@@ -372,3 +372,38 @@ exports.inviaMailRendiconto = function (nomeFileRendiconto, datiUtente, datiComu
         callback(undefined, "Errore");
     }
 }
+
+exports.inviaMailRendiconto_Host = function (email, nomeFileRendiconto, importo, callback) {
+    
+    var mailOptions = {
+        from: "dcbooking2020@gmail.com",
+        to: email,
+        subject: "Notifica avvenuto rendiconto",
+        text: "Ti confermiamo l'avvenuto pagamento delle tasse di soggiorno " +
+            "con importo pari a €" + importo + ".\n" +
+            "In allegato il documento di rendiconto generato automaticamente e inviato all'ufficio del turismo.",
+        attachments: [
+            {
+                path: './public/uploads/rendiconti/' + nomeFileRendiconto
+            }
+        ]
+    }
+
+    var errore = false;
+    transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+            console.log(error);
+            errore = true;
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+
+    if (errore == false) {
+        callback(undefined, "250 Ok");
+    }
+    else {
+        callback(undefined, "Errore");
+    }
+}
+

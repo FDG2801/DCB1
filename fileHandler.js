@@ -18,7 +18,7 @@ exports.eliminaFile = function(percorsoFileInPublic, callback) {
 }
 
 exports.controllaEstensioneFile = function(filename, listaEstensioniValide, callback) {
-    let ext = path.extname(filename);
+    let ext = path.extname(filename).toLowerCase();
 
     if (listaEstensioniValide.includes(ext)) {
         callback(true);
@@ -31,7 +31,7 @@ exports.controllaEstensioneFile = function(filename, listaEstensioniValide, call
 exports.controllaEstensioneFileMultipli = function(listaFile, listaEstensioniValide, callback) {
     let errore = false;
     for (let i = 0; i < listaFile.length; i++) {
-        let ext = path.extname(listaFile[i].originalname);
+        let ext = path.extname(listaFile[i].originalname).toLowerCase();
         if (listaEstensioniValide.includes(ext)) {
             continue;
         }
@@ -120,8 +120,7 @@ exports.inviaAvatarUtente = function(req, res) {
             if (result[0].foto === defaultAvatar || result[0].foto == null) {
                 res.sendFile(defaultAvatar, {root: './public/defaults'});
             }
-            else {
-                console.log("aaaaa");             
+            else {         
                 res.sendFile(result[0].foto, {root: './public/uploads/avatarUtenti'});
             }
         }

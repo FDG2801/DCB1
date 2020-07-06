@@ -79,9 +79,13 @@ exports.accettaRichiestaHost = function(req, res) {
                     mailer.inviaMail(req.query.email, "Accettazione richiesta host", 
                     "Congratulazioni! La tua richiesta per diventare host è stata approvata da " 
                     + "uno dei nostri admin. Adesso sarai in grado di mettere in affitto i tuoi immobili.\n"
-                    + "Ricordati però che avrai l'obbligo legale di inviare un rendiconto con cadenza almeno "
-                    + "trimestrale agli uffici del turismo dei comuni in cui sono situati i tuoi immobili.\n"
-                    + "Avrai inoltre la possibilità di visionare i tuoi guadagni mensili, il tutto nella"
+                    + "Ricordati però che avrai l'obbligo legale di inviare, per ognuno dei tuoi immobili, un documento di rendiconto con cadenza almeno "
+                    + "trimestrale agli uffici del turismo del comune in cui è situato, e di pagare le tasse di soggiorno.\n "
+                    + "Per facilitare il processo, automatizziamo la generazione e l'invio del documento; per effettuare un rendiconto "
+                    + "per un determinato immobile, vai nella tua nuova sezione 'Contabilità' nell'area riservata e premi il pulsante 'Paga' "
+                    + "per l'immobile per cui fare rendiconto. Al pagamento delle tasse verrà inviato automaticamente il documento sia a te che "
+                    + "all'ufficio del turismo.\n"
+                    + "Avrai inoltre la possibilità di visionare i tuoi guadagni mensili, sempre nella sezione 'Contabilità' della "
                     + "tua nuova area riservata.\n",
                     function(error, response) {
                         if (response == "250 Ok") {

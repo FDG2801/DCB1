@@ -24,11 +24,11 @@ app.use(bodyParser.raw());
 
 app.use(express.static('public'));
 
-app.use(express.static(path.join(__dirname, 'build')));
+/*app.use(express.static(path.join(__dirname, 'build')));
 
 app.get('/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
+});*/
 
 const isLogged = autenticazioneControl.checkIfLoggedIn;
 const isLogged_body = autenticazioneControl.checkIfLoggedIn_body;
@@ -70,7 +70,7 @@ app.get('/visualizzaImmobile', immobiliControl.visualizzaImmobile);
 app.get('/datiContabilita', isLogged, isHost, contabilitaControl.datiContabilita);
 app.post('/pagamentoRendiconto', isLogged, isHost, contabilitaControl.effettuaPagamentoRendiconto);
 app.get('/totaleTasseRendiconto', isLogged, isHost, contabilitaControl.richiediTotaleTasseRendiconto);
-app.get('/comuniDaRendicontare', isLogged, isHost, contabilitaControl.comuniDaRendicontare);
+app.get('/immobiliDaRendicontare', isLogged, isHost, contabilitaControl.immobiliDaRendicontare);
 
 // --- Gestione Admin
 app.post('/loginAdmin', adminControl.loginAdmin);

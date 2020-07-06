@@ -89,6 +89,26 @@ exports.richiediPrenotazioniDaEstinguere = function(ref_utente, callback) {
                 I.percentualeRimborso, P.saldoTotale
             FROM Prenotazione P, Host H, Utente U, Immobile I, PrenotazioneAccettata PA
             WHERE P.ref_Immobile = I.ID_Immobile
+                AND I.modalitaPagamento <> 'dilazionato'
+                AND P.ref_Utente = ?
+                AND P.ID_Prenotazione = PA.ref_Prenotazione
+                AND I.ref_Host = H.ref_Utente
+                AND H.ref_Utente = U.ID_Utente
+                AND 1 > (
+                    SELECT COUNT(*)
+                    FROM Pagamento Pag
+                    WHERE Pag.ref_Prenotazione = PA.ref_Prenotazione
+                )
+        )
+
+        UNION
+
+        (
+            SELECT P.ID_Prenotazione, I.titolo, P.checkin, P.checkout, I.foto, U.nome, U.cognome,
+                I.percentualeRimborso, P.saldoTotale
+            FROM Prenotazione P, Host H, Utente U, Immobile I, PrenotazioneAccettata PA
+            WHERE P.ref_Immobile = I.ID_Immobile
+                AND I.modalitaPagamento = 'dilazionato'
                 AND P.ref_Utente = ?
                 AND P.ID_Prenotazione = PA.ref_Prenotazione
                 AND I.ref_Host = H.ref_Utente
@@ -98,7 +118,7 @@ exports.richiediPrenotazioniDaEstinguere = function(ref_utente, callback) {
                     FROM Pagamento Pag
                     WHERE Pag.ref_Prenotazione = PA.ref_Prenotazione
                 )
-        );
+        )
     `;
     db.queryRichiesta(sql, [ref_utente, ref_utente], callback);
 }
@@ -234,3 +254,4 @@ exports.richiediRichiestaHost = function (idUtente, callback) {
     const sql = "SELECT * FROM RichiestaHost WHERE ref_Utente = ?";
     db.queryRichiesta(sql, [idUtente], callback);
 }
+

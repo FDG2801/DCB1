@@ -78,21 +78,24 @@ exports.mostraContabilita = function (idHost, anno, callback) {
     db.queryRichiesta(sql, [idHost, anno], callback);
 }
 
+// Dovrebbe andare
 exports.trovaHostDaAvvisare = function (callback) {
     const sql = `
-        SELECT U.ID_Utente AS ID_Utente, U.email AS email, C.nome AS comune, P.nome AS provincia
-        FROM Utente U, Host H, PagamentoRendiconto PR, Comuni C, Province P
+        SELECT U.ID_Utente AS ID_Utente, U.email AS email, C.nome AS comune, P.nome AS provincia,
+            I.titolo AS titolo, I.indirizzo AS indirizzo
+        FROM Utente U, Host H, PagamentoRendiconto PR, Comuni C, Province P, Immobile I
         WHERE H.ref_Utente = U.ID_Utente
+            AND I.ref_Host = H.ref_Utente
             AND H.restrizioni = 0
             AND PR.ref_Host = H.ref_Utente
-            AND PR.ref_Comune = C.id_comune
+            AND PR.ref_Immobile = I.ID_Immobile
             AND C.ref_provincia = P.id_provincia
             AND TIMESTAMPDIFF(MONTH,
                 (
                     SELECT MAX(PR1.dataPagamento)
                     FROM PagamentoRendiconto PR1
                     WHERE PR1.ref_Host = H.ref_Utente
-                        AND PR1.ref_Comune = C.id_comune
+                        AND PR1.ref_Immobile = I.ID_Immobile
                 ), CURDATE()
             ) >= 3;
     `;
@@ -109,15 +112,13 @@ exports.applicaRestrizioni = function(idHost, callback) {
     db.queryAggiornamento(sql, [idHost, idHost], callback);
 }
 
-exports.cercaDatiRendiconto = function(idHost, idComune, callback){
+exports.cercaDatiRendiconto = function(idImmobile, callback){
     const sql = `
         CREATE OR REPLACE VIEW TassePerPrenotazione AS (
             SELECT P.ID_Prenotazione AS ID_P, P.checkin AS checkin, P.checkout AS checkout, 
                 (COUNT(*) - P.numeroEsenti) * I.tasseSoggiorno * TIMESTAMPDIFF(DAY, P.checkin, P.checkout) AS TassePrenotazione
-            FROM Host H, Immobile I, Prenotazione P, PrenotazioneAccettata PA, Ospiti O
-            WHERE H.ref_Utente = ?
-                AND I.ref_comune = ?
-                AND H.ref_Utente = I.ref_Host
+            FROM Immobile I, Prenotazione P, PrenotazioneAccettata PA, Ospiti O
+            WHERE I.ID_Immobile = ?
                 AND I.ID_Immobile = P.ref_Immobile
                 AND P.ID_Prenotazione = PA.ref_Prenotazione
                 AND P.ID_Prenotazione = O.ref_Prenotazione
@@ -129,8 +130,8 @@ exports.cercaDatiRendiconto = function(idHost, idComune, callback){
                 AND (
                     SELECT MAX(PR1.dataPagamento)
                     FROM PagamentoRendiconto PR1
-                    WHERE PR1.ref_Host = H.ref_Utente
-                        AND PR1.ref_Comune = I.ref_comune
+                    WHERE PR1.ref_Host = I.ref_Host
+                        AND PR1.ref_Immobile = I.ID_Immobile
                 ) <= (
                     SELECT MAX(Pag1.dataPagamento)
                     FROM Pagamento Pag1
@@ -144,18 +145,16 @@ exports.cercaDatiRendiconto = function(idHost, idComune, callback){
         WHERE TP.ID_P = O.ref_Prenotazione;
     `;
     
-    db.queryRichiesta(sql, [idHost, idComune], callback);
+    db.queryRichiesta(sql, [idImmobile], callback);
 }
 
-exports.richiediTotaleTasseRendiconto = function(idHost, idComune, callback){
+exports.richiediTotaleTasseRendiconto = function(idImmobile, callback){
     const sql = `
         CREATE OR REPLACE VIEW TassePerPrenotazione AS (
             SELECT P.ID_Prenotazione AS ID_P, P.checkin AS checkin, P.checkout AS checkout, 
                 (COUNT(*) - P.numeroEsenti) * I.tasseSoggiorno * TIMESTAMPDIFF(DAY, P.checkin, P.checkout) AS TassePrenotazione
-            FROM Host H, Immobile I, Prenotazione P, PrenotazioneAccettata PA, Ospiti O
-            WHERE H.ref_Utente = ?
-                AND I.ref_comune = ?
-                AND H.ref_Utente = I.ref_Host
+            FROM Immobile I, Prenotazione P, PrenotazioneAccettata PA, Ospiti O
+            WHERE I.ID_Immobile = ?
                 AND I.ID_Immobile = P.ref_Immobile
                 AND P.ID_Prenotazione = PA.ref_Prenotazione
                 AND P.ID_Prenotazione = O.ref_Prenotazione
@@ -167,8 +166,8 @@ exports.richiediTotaleTasseRendiconto = function(idHost, idComune, callback){
                 AND (
                     SELECT MAX(PR1.dataPagamento)
                     FROM PagamentoRendiconto PR1
-                    WHERE PR1.ref_Host = H.ref_Utente
-                        AND PR1.ref_Comune = I.ref_comune
+                    WHERE PR1.ref_Host = I.ref_Host
+                        AND PR1.ref_Immobile = I.ID_Immobile
                 ) <= (
                     SELECT MAX(Pag1.dataPagamento)
                     FROM Pagamento Pag1
@@ -181,38 +180,38 @@ exports.richiediTotaleTasseRendiconto = function(idHost, idComune, callback){
         FROM TassePerPrenotazione; 
     `;
     
-    db.queryRichiesta(sql, [idHost, idComune], callback);
+    db.queryRichiesta(sql, [idImmobile], callback);
 }
 
-exports.pagamentoRendiconto = function(ref_Host, ref_Comune, importo, nomeDocumento, callback) {
+exports.pagamentoRendiconto = function(ref_Host, ref_Immobile, importo, nomeDocumento, callback) {
     const sql = `
             INSERT INTO PagamentoRendiconto
             VALUES (?, CURDATE());
 
             UPDATE Host SET restrizioni = false WHERE ref_Utente = ?;
         `;
-    db.queryInserimento(sql, [[ref_Host, ref_Comune, importo, nomeDocumento], ref_Host], callback);
+    db.queryInserimento(sql, [[ref_Host, ref_Immobile, importo, nomeDocumento], ref_Host], callback);
 }
 
-exports.numeroRendicontiHostPerComune = function(idUtente, idComune, callback) {
+exports.numeroRendicontiHostPerImmobile = function(idUtente, idImmobile, callback) {
     const sql = `
-        SELECT COUNT(*) AS numeroRendicontiComune
+        SELECT COUNT(*) AS numeroRendicontiImmobile
         FROM PagamentoRendiconto PR
         WHERE ref_Host = ?
-            AND ref_Comune = ?;
+            AND ref_Immobile = ?;
     `;
 
-    db.queryRichiesta(sql, [idUtente, idComune], callback);
+    db.queryRichiesta(sql, [idUtente, idImmobile], callback);
 }
 
-exports.richiediComuniDaRendicontare = function(idHost, callback) {
+exports.richiediImmobiliDaRendicontare = function(idHost, callback) {
     const sql = `
-        SELECT DISTINCT C.id_comune, C.nome
+        SELECT DISTINCT I.ID_Immobile, I.titolo, C.nome
         FROM Immobile I, PagamentoRendiconto PR, Comuni C
         WHERE I.ref_Host = ?
             AND I.tasseSoggiorno >= 0
             AND PR.ref_Host = I.ref_Host
-            AND PR.ref_Comune = C.id_comune
+            AND PR.ref_Immobile = I.ID_Immobile
             AND I.ref_comune = C.id_comune
             AND EXISTS (
                 SELECT *
@@ -228,7 +227,7 @@ exports.richiediComuniDaRendicontare = function(idHost, callback) {
                         SELECT MAX(PR1.dataPagamento)
                         FROM PagamentoRendiconto PR1
                         WHERE PR1.ref_Host = PR.ref_Host
-                            AND PR1.ref_Comune = PR.ref_Comune
+                            AND PR1.ref_Immobile = PR.ref_immobile
                     ) <= (
                         SELECT MAX(Pag1.dataPagamento)
                         FROM Pagamento Pag1
